@@ -1,0 +1,21 @@
+{
+  "name": "Monitoramento Motorista",
+  "short_name": "MonitorMotor",
+  "start_url": "./site_motorista.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2E86C1",
+  "description": "App para envio de localização de motoristas",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

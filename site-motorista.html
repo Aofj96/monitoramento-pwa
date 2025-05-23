@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Envio de Localização do Motorista</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#2E86C1" />
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  label {
+    font-weight: bold;
+  }
+  input {
+    padding: 8px;
+    width: 100%;
+    max-width: 300px;
+    margin-top: 4px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin-right: 10px;
+  }
+  #status {
+    margin-top: 20px;
+    font-style: italic;
+    color: green;
+  }
+</style>
+</head>
+<body>
+<h2>Envie sua localização</h2>
+<label for="pedido">Número do Pedido:</label><br>
+<input type="text" id="pedido" placeholder="Digite o número do pedido" /><br>
+<label for="nome">Nome do Motorista:</label><br>
+<input type="text" id="nome" placeholder="Digite seu nome" /><br>
+<button id="btnStart">Iniciar envio de localização</button>
+<button id="btnStop" disabled>Parar envio de localização</button>
+
+<p id="status"></p>
+
+<!-- Firebase SDK compatível -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<script>
+// Sua configuração Firebase no modo compatível
+const firebaseConfig = {
+  apiKey: "AIzaSyDKOJmCuRH9EI10UQVqYHimI1-1BcgTC98",
+  authDomain: "monitoramento-7df22.firebaseapp.com",
+  databaseURL: "https://monitoramento-7df22-default-rtdb.firebaseio.com",
+  projectId: "monitoramento-7df22",
+  storageBucket: "monitoramento-7df22.appspot.com",
+  messagingSenderId: "230248686797",
+  appId: "1:230248686797:web:1b14e7239e50a95de0f584"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// Variável global para guardar o id do watch
+let watchId = null;
+
+document.getElementById('btnStart').onclick = function() {
+  const pedido = document.getElementById('pedido').value.trim();
+  const nome = document.getElementById('nome').value.trim();
+
+  if(!pedido || !nome){
+    alert('Por favor, preencha número do pedido e nome!');
+    return;
+  }
+
+  if (!navigator.geolocation){
+    alert('Seu navegador não suporta geolocalização.');
+    return;
+  }
+
+  document.getElementById('status').textContent = 'Aguardando permissão para acessar localização...';
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      database.ref('motoristas/' + pedido).set({
+        nome: nome,
+        pedido: pedido,
+        latitude: lat,
+        longitude: lon,
+        ultimaAtualizacao: Date.now()
+      });
+
+      document.getElementById('status').textContent = `Localização enviada: Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)}`;
+    },
+    (err) => {
+      alert('Erro ao obter localização: ' + err.message);
+      document.getElementById('status').textContent = 'Erro ao obter localização.';
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+  );
+
+  this.disabled = true;
+  this.textContent = 'Localização sendo enviada...';
+
+  // Ativar botão de parar
+  document.getElementById('btnStop').disabled = false;
+};
+
+document.getElementById('btnStop').onclick = function() {
+  if(watchId !== null){
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    document.getElementById('status').textContent = 'Envio de localização parado.';
+    this.disabled = true;
+
+    // Reabilitar botão iniciar
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnStart').textContent = 'Iniciar envio de localização';
+  }
+};
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js')
+    .then(() => console.log('Service Worker registrado com sucesso'))
+    .catch(err => console.log('Falha ao registrar Service Worker:', err));
+}
+</script>
+
+</body>
+</html>
